@@ -101,6 +101,7 @@ chmod 755 package/base-files/files/bin/coremark.sh
 # 定时限速插件
 git clone --depth=1 https://github.com/sirpdboy/luci-app-eqosplus package/luci-app-eqosplus
 
+echo "src-git mtk_open https://github.com/immortalwrt/mtk-openwrt-feeds.git" >> feeds.conf
 
 ./scripts/feeds update -a
 ./scripts/feeds install -a
