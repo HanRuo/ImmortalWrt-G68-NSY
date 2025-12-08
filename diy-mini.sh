@@ -108,3 +108,4 @@ echo "src-git mtk_open https://github.com/immortalwrt/mtk-openwrt-feeds.git" >> 
 
 ./scripts/feeds update -a
 ./scripts/feeds install -a
+./scripts/feeds install -p mtk_open luci-app-mtk
