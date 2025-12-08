@@ -68,7 +68,10 @@ rm -rf feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/*
 # iStore
 git_sparse_clone main https://github.com/linkease/istore-ui app-store-ui
 git_sparse_clone main https://github.com/linkease/istore luci
-
+# 拉取 iStoreOS 主题
+git clone --depth=1 https://github.com/linkease/luci-theme-istoreos package/luci-theme-istoreos
+# 拉取 iStoreOS UI 适配
+git clone --depth=1 https://github.com/linkease/luci-mod-istoreos package/luci-mod-istoreos
 
 # 为固件版本加上编译作者
 author="xiaomeng9597"
