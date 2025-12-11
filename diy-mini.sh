@@ -68,7 +68,13 @@ rm -rf feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/*
 # iStore
 git_sparse_clone main https://github.com/linkease/istore-ui app-store-ui
 git_sparse_clone main https://github.com/linkease/istore luci
-git_sparse_clone main https://github.com/linkease/nas-packages-luci/tree/537058eda0b5b0ea8f0e12e5c9d7d4581a694c83/luci luci-app-quickstart 
+
+echo >> feeds.conf.default
+echo 'src-git nas https://github.com/linkease/nas-packages.git;master' >> feeds.conf.default
+echo 'src-git nas_luci https://github.com/linkease/nas-packages-luci.git;main' >> feeds.conf.default
+./scripts/feeds update nas nas_luci
+./scripts/feeds install -a -p nas
+./scripts/feeds install -a -p nas_luci
 
 # 为固件版本加上编译作者
 author="xiaomeng9597"
