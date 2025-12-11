@@ -68,7 +68,7 @@ rm -rf feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/*
 # iStore
 git_sparse_clone main https://github.com/linkease/istore-ui app-store-ui
 git_sparse_clone main https://github.com/linkease/istore luci
-git_sparse_clone main https://github.com/linkease/nas-packages-luci package/luci-app-quickstart 
+git_sparse_clone main https://github.com/linkease/nas-packages-luci luci-app-quickstart 
 
 # 为固件版本加上编译作者
 author="xiaomeng9597"
