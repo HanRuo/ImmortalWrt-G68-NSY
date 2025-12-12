@@ -117,14 +117,6 @@ find package/*/ -maxdepth 2 -name Makefile | \
 find package/*/ -maxdepth 2 -name Makefile | \
   xargs sed -i 's|PKG_SOURCE_URL:=@GHCODELOAD|PKG_SOURCE_URL:=https://codeload.github.com|g'
 
-# 新增：修复 Rust 1.89.0 在 CI 环境下的编译冲突
-if [ -f "feeds/packages/lang/rust/Makefile" ]; then
-  echo "===== 修复 Rust 包的 CI 配置冲突 ====="
-  # 找到 llvm.download-ci-llvm=true 并替换为 if-unchanged
-  sed -i 's/llvm\.download-ci-llvm=true/llvm.download-ci-llvm=if-unchanged/g' feeds/packages/lang/rust/Makefile
-  # 重新生成 Rust 包的配置
-  make package/feeds/packages/rust/clean
-fi
 
 # 可选：修改 Argon 主题背景（取消注释并放置图片）
 # rm -rf feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/*
