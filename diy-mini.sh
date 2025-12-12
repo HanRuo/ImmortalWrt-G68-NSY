@@ -52,7 +52,6 @@ src-git packages https://github.com/immortalwrt/packages.git;openwrt-24.10
 src-git luci https://github.com/immortalwrt/luci.git;openwrt-24.10
 src-git routing https://github.com/openwrt/routing.git;openwrt-24.10
 src-git telephony https://github.com/openwrt/telephony.git;openwrt-24.10
-# 新增的 iStore 专属 feeds（仅追加，不修改原有）
 src-git store https://github.com/linkease/istore.git;main
 src-git third https://github.com/jjm2473/openwrt-third.git;main
 src-git linkease_nas https://github.com/linkease/nas-packages.git;master
@@ -66,6 +65,10 @@ EOF
 echo "===== 更新并安装所有 Feed ====="
 ./scripts/feeds update -a -f  # -f 强制更新，忽略缓存
 ./scripts/feeds install -a     # 安装所有 Feed 包
+# 兜底：单独安装 quickstart 相关包（确保依赖不遗漏）
+./scripts/feeds install -p linkease_nas quickstart
+./scripts/feeds install -p linkease_nas_luci luci-app-quickstart luci-lib-iform luci-i18n-quickstart-zh-cn
+./scripts/feeds install -p store luci-app-store
 
 #-------------------------------------------------
 # 4. 拉取额外定制包（主题、限速插件等）
@@ -82,6 +85,20 @@ git clone --depth=1 https://github.com/sirpdboy/luci-app-eqosplus package/luci-a
 git_sparse_clone main https://github.com/linkease/istore-ui app-store-ui
 
 #-------------------------------------------------
+# 5. 强制勾选核心组件（确保编译进去）
+#-------------------------------------------------
+echo "===== 配置核心组件编译选项 ====="
+cat >> .config <<EOF
+# 强制勾选 quickstart 相关
+CONFIG_PACKAGE_quickstart=y
+CONFIG_PACKAGE_luci-app-quickstart=y
+CONFIG_PACKAGE_luci-i18n-quickstart-zh-cn=y
+CONFIG_PACKAGE_luci-lib-iform=y
+# 强制勾选 istore
+CONFIG_PACKAGE_luci-app-store=y
+# 可选：勾选 OpenAppFilter（如需）
+# CONFIG_PACKAGE_luci-app-oaf=y
+EOF
 # 强制生效配置（拉齐所有依赖）
 make defconfig
 
@@ -117,7 +134,6 @@ find package/*/ -maxdepth 2 -name Makefile | \
 find package/*/ -maxdepth 2 -name Makefile | \
   xargs sed -i 's|PKG_SOURCE_URL:=@GHCODELOAD|PKG_SOURCE_URL:=https://codeload.github.com|g'
 
-
 # 可选：修改 Argon 主题背景（取消注释并放置图片）
 # rm -rf feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/*
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
@@ -125,3 +141,8 @@ find package/*/ -maxdepth 2 -name Makefile | \
 #=================================================
 # 脚本执行完成
 #=================================================
+echo -e "\n===== DIY 脚本执行完成！====="
+echo "下一步操作："
+echo "1. make menuconfig （确认组件勾选状态，无需额外修改）"
+echo "2. make defconfig （再次生效配置）"
+echo "3. make V=s （开始编译，可查看详细日志）"
