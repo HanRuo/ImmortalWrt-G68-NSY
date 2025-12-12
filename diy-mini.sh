@@ -48,18 +48,15 @@ function merge_package() {
 echo "===== 备份并替换 feeds.conf.default ====="
 cp -f feeds.conf.default feeds.conf.default.bak  # 备份原有配置
 cat > feeds.conf.default <<'EOF'
-src-git packages https://github.com/jjm2473/packages.git;istoreos-24.10
-src-git luci https://github.com/jjm2473/luci.git;istoreos-24.10
+src-git packages https://github.com/immortalwrt/packages.git;openwrt-24.10
+src-git luci https://github.com/immortalwrt/luci.git;openwrt-24.10
 src-git routing https://github.com/openwrt/routing.git;openwrt-24.10
 src-git telephony https://github.com/openwrt/telephony.git;openwrt-24.10
-# istore
+# 新增的 iStore 专属 feeds（仅追加，不修改原有）
 src-git store https://github.com/linkease/istore.git;main
-# argon, etc.
 src-git third https://github.com/jjm2473/openwrt-third.git;main
-# nas-packages-luci
 src-git linkease_nas https://github.com/linkease/nas-packages.git;master
 src-git linkease_nas_luci https://github.com/linkease/nas-packages-luci.git;main
-# OpenAppFilter
 src-git oaf https://github.com/jjm2473/OpenAppFilter.git;dev4
 EOF
 
