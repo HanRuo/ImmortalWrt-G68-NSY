@@ -84,6 +84,7 @@ git clone --depth=1 https://github.com/sirpdboy/luci-app-eqosplus package/luci-a
 # istore 前端（兜底，避免 Feed 拉取不全）
 git_sparse_clone main https://github.com/linkease/istore-ui app-store-ui
 
+#-------------------------------------------------
 # 强制生效配置（拉齐所有依赖）
 make defconfig
 
@@ -126,4 +127,3 @@ find package/*/ -maxdepth 2 -name Makefile | \
 #=================================================
 # 脚本执行完成
 #=================================================
-echo -e "\n===== DIY 脚本执行完成！====="
