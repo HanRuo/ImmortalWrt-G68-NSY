@@ -139,6 +139,16 @@ find package/*/ -maxdepth 2 -name Makefile | \
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 #=================================================
+# 修复 Rust 1.90.0 编译缺失 Cargo.toml.orig 错误
+#=================================================
+echo "===== 修复 Rust 1.90.0 编译错误（自动生成 Cargo.toml.orig） ====="
+sed -i '/^# No make install for host/i\
+define Host/Compile\n\t$(call Host/Compile/Rust)\nendef\n\n# 修复缺失 .orig 文件\n' feeds/packages/lang/rust/Makefile
+
+# 关键修复：编译前自动复制所有 Cargo.toml 为 Cargo.toml.orig
+sed -i 's|^	\$(call Host/Compile/Rust)|	find $(HOST_BUILD_DIR)/vendor -name "Cargo.toml" -exec cp {} {}.orig \\;\n	$(call Host/Compile/Rust)|' feeds/packages/lang/rust/Makefile
+
+#=================================================
 # 脚本执行完成
 #=================================================
 echo -e "\n===== DIY 脚本执行完成！====="
