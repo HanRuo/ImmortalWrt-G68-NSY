@@ -139,15 +139,20 @@ find package/*/ -maxdepth 2 -name Makefile | \
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 #=================================================
-# 修复 Rust 1.90.0 编译缺失 Cargo.toml.orig 错误
+# 同步上游官方修复 Rust 1.90.0 编译BUG（保留Rust功能）
 #=================================================
-echo "===== 修复 Rust 1.90.0 编译错误（自动生成 Cargo.toml.orig） ====="
-sed -i '/^# No make install for host/i\
-define Host/Compile\n\t$(call Host/Compile/Rust)\nendef\n\n# 修复缺失 .orig 文件\n' feeds/packages/lang/rust/Makefile
-
-# 关键修复：编译前自动复制所有 Cargo.toml 为 Cargo.toml.orig
-sed -i 's|^	\$(call Host/Compile/Rust)|	find $(HOST_BUILD_DIR)/vendor -name "Cargo.toml" -exec cp {} {}.orig \\;\n	$(call Host/Compile/Rust)|' feeds/packages/lang/rust/Makefile
-
+echo "===== 同步上游官方修复 Rust 1.90.0 编译错误 ====="
+# 1. 备份原有rust文件（可选）
+cp -f feeds/packages/lang/rust/Makefile feeds/packages/lang/rust/Makefile.bak
+# 2. 直接拉取【上游官方已修复】的rust Makefile（完美兼容24.10）
+wget -O feeds/packages/lang/rust/Makefile https://raw.githubusercontent.com/openwrt/packages/openwrt-24.10/lang/rust/Makefile
+# 3. 额外修复：自动生成缺失的Cargo.toml.orig（双重保险）
+sed -i '/HOST_BUILD_PARALLEL:=1/a \\tfind $(HOST_BUILD_DIR)/vendor -name "Cargo.toml" -exec cp {} {}.orig \\;' feeds/packages/lang/rust/Makefile
+# 4. 强制清理损坏的Rust编译缓存（关键！必须删）
+rm -rf build_dir/target-aarch64_generic_musl/host/rustc-1.90.0-src/
+rm -rf dl/rustc-1.90.0*
+# 5. 生效配置
+make defconfig
 #=================================================
 # 脚本执行完成
 #=================================================
