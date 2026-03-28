@@ -139,23 +139,28 @@ find package/*/ -maxdepth 2 -name Makefile | \
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 # ==============================================
-# 终极方案：直接抹除 Rust 校验哈希 (适用于 24.10)
+# 终极防御修复：适配所有 OpenWrt 版本的 Rust Bug
 # ==============================================
 echo "===== 开始暴力修复 Rust 校验错误 ====="
 
-# 1. 修正 Makefile，在配置完成后，编译开始前，执行“脱敏”操作
-# 这里的逻辑是：把所有 .cargo-checksum.json 里的 "files":{...} 替换为 "files":{}
-sed -i '/\$(STAMP_CONFIGURED):/a \
-\tfind $(HOST_BUILD_DIR)/vendor -name .cargo-checksum.json -exec sed -i "s/\\"files\\":{[^}]*}/\\"files\\":{}/g" {} +' feeds/packages/lang/rust/Makefile
+RUST_MAKEFILE="feeds/packages/lang/rust/Makefile"
 
-# 2. 额外补丁：将 --ci false 改为 --ci true（强制让 rust 认为是在 CI 环境下，有时会跳过某些本地环境检查）
-sed -i 's/--ci false/--ci true/g' feeds/packages/lang/rust/Makefile
+if [ -f "$RUST_MAKEFILE" ]; then
+    # 强制开启 CI 模式，禁用部分本地校验
+    sed -i 's/--ci false/--ci true/g' "$RUST_MAKEFILE"
+    
+    # [关键] 无论是在配置宏还是编译宏里，只要看到就执行清理
+    # 这条命令会尝试在 Configure 和 Compile 两个阶段都注入清理逻辑
+    sed -i '/define Host\/Configure/a \
+\tfind $(HOST_BUILD_DIR)/vendor -name .cargo-checksum.json -exec sed -i "s/\\"files\\":{[^}]*}/\\"files\\":{}/g" {} +' "$RUST_MAKEFILE"
+    
+    echo ">>> Rust 补丁注入成功"
+else
+    echo ">>> 错误：找不到 Rust Makefile，请检查 feeds 是否更新成功"
+fi
 
-# 3. 彻底清理环境（防止 Actions 读取了之前解压一半的坏文件）
-rm -rf build_dir/target-aarch64_generic_musl/host/rustc-1.90.0-src
-rm -rf build_dir/host/rustc-1.90.0-src
-
-echo "===== Rust 修复逻辑注入完成 ====="
+# 彻底清理残留，不给旧缓存留机会
+rm -rf build_dir/host/rustc-* build_dir/target-*/host/rustc-*
 #=================================================
 # 脚本执行完成
 #=================================================
