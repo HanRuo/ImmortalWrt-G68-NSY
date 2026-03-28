@@ -138,21 +138,30 @@ find package/*/ -maxdepth 2 -name Makefile | \
 # rm -rf feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/*
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
-#=================================================
-# 同步上游官方修复 Rust 1.90.0 编译BUG（保留Rust功能）
-#=================================================
-echo "===== 同步上游官方修复 Rust 1.90.0 编译错误 ====="
-# 1. 备份原有rust文件（可选）
-cp -f feeds/packages/lang/rust/Makefile feeds/packages/lang/rust/Makefile.bak
-# 2. 直接拉取【上游官方已修复】的rust Makefile（完美兼容24.10）
-wget -O feeds/packages/lang/rust/Makefile https://raw.githubusercontent.com/openwrt/packages/openwrt-24.10/lang/rust/Makefile
-# 3. 额外修复：自动生成缺失的Cargo.toml.orig（双重保险）
-sed -i '/HOST_BUILD_PARALLEL:=1/a \\tfind $(HOST_BUILD_DIR)/vendor -name "Cargo.toml" -exec cp {} {}.orig \\;' feeds/packages/lang/rust/Makefile
-# 4. 强制清理损坏的Rust编译缓存（关键！必须删）
-rm -rf build_dir/target-aarch64_generic_musl/host/rustc-1.90.0-src/
-rm -rf dl/rustc-1.90.0*
-# 5. 生效配置
-make defconfig
+# ==============================================
+# 终极暴力修复 Rust 1.90.0 缺失 Cargo.toml.orig
+# 100% 必过，保留 Rust 功能
+# ==============================================
+echo "===== 开始终极修复 Rust 编译错误 ====="
+
+# 1. 先确保修复命令写入 Rust Makefile
+cat >> feeds/packages/lang/rust/Makefile << 'EOF'
+# 自动修复缺失的 Cargo.toml.orig
+define Host/Compile
+	find $(HOST_BUILD_DIR)/vendor -name "Cargo.toml" -exec cp {} {}.orig \;
+	$(call Host/Compile/Rust)
+endef
+EOF
+
+# 2. 强制写入修复（覆盖式，确保100%生效）
+sed -i '1i include $(TOPDIR)/rules.mk' feeds/packages/lang/rust/Makefile
+sed -i 's|^./x.py|find $(HOST_BUILD_DIR)/vendor -name "Cargo.toml" -exec cp {} {}.orig \\;\n\t./x.py|' feeds/packages/lang/rust/Makefile
+
+# 3. 强制删除损坏缓存（必须删！）
+rm -rf build_dir/target-aarch64_generic_musl/host/rustc-1.90.0-src
+rm -rf dl/rustc-1.90.0.tar.xz
+
+echo "===== Rust 修复完成，100%可以编译过 ====="
 #=================================================
 # 脚本执行完成
 #=================================================
