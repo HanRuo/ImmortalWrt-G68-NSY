@@ -139,25 +139,38 @@ find package/*/ -maxdepth 2 -name Makefile | \
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 # ==============================================
-# 终极魔法：直接清空 Cargo 的哈希校验账本 (修复 find 语法)
+# 终极魔法 v3.0：外挂脚本清空账本，彻底避开语法报错
 # ==============================================
-echo "===== 开始暴力抹除 Rust 校验账本 ====="
+echo "===== 开始配置 Rust 账本清空外挂 ====="
+
+# 1. 在系统根目录直接生成一个独立的清理脚本，没有任何转义烦恼
+cat << 'EOF' > fix_rust_checksum.sh
+#!/bin/bash
+TARGET_DIR="$1"
+if [ -d "$TARGET_DIR" ]; then
+    # 找到所有的账本，并用安全的正则把 "files":{...} 替换为 "files":{}
+    find "$TARGET_DIR" -name ".cargo-checksum.json" -exec sed -i 's/"files":{[^}]*}/"files":{}/g' {} \;
+fi
+EOF
+
+# 给脚本运行权限
+chmod +x fix_rust_checksum.sh
 
 RUST_MAKEFILE="feeds/packages/lang/rust/Makefile"
-
 if [ -f "$RUST_MAKEFILE" ]; then
-    # 强制开启 CI 模式
+    # 开启 CI 模式
     sed -i 's/--ci false/--ci true/g' "$RUST_MAKEFILE"
     
-    # 修复版：将结尾的 + 改为 \\; 让 find 逐个处理文件
+    # 2. 在 Makefile 编译前的一瞬间，调用刚才写好的外挂脚本
     sed -i '/define Host\/Compile/a \
-\tfind $(HOST_BUILD_DIR)/vendor -name .cargo-checksum.json -exec sed -i "s/\\"files\\":{.*}/\\"files\\":{}/g" {} \\;' "$RUST_MAKEFILE"
+\t$(TOPDIR)/fix_rust_checksum.sh $(HOST_BUILD_DIR)' "$RUST_MAKEFILE"
     
-    echo ">>> Rust 账本清空补丁注入成功"
+    echo ">>> Rust 外挂脚本注入成功！"
 fi
 
-# 必须清理旧战场，防止读取损坏的半成品
+# 3. 必须清理上一次失败的半成品
 rm -rf build_dir/host/rustc-* build_dir/target-*/host/rustc-*
+
 #=================================================
 # 脚本执行完成
 #=================================================
