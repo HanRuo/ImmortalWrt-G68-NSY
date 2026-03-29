@@ -138,33 +138,6 @@ find package/*/ -maxdepth 2 -name Makefile | \
 # rm -rf feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/background/*
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
-# ==============================================
-# 终极魔法 v4.0：单行拦截替换法（绝对不会报 sed 语法错误）
-# ==============================================
-
-# 1. 创建一个全自动补齐+清空账本的外挂脚本
-cat << 'EOF' > fix_rust.sh
-#!/bin/bash
-VENDOR_DIR="$1"
-# 强行造出一个空的 .orig 文件，应付存在性检查
-find "$VENDOR_DIR" -name Cargo.toml -exec bash -c 'touch "${1}.orig"' _ {} \;
-# 清空账本里的哈希记录，应付内容校验
-find "$VENDOR_DIR" -name .cargo-checksum.json -exec sed -i 's/"files":{[^}]*}/"files":{}/g' {} \;
-exit 0
-EOF
-chmod +x fix_rust.sh
-
-RUST_MAKEFILE="feeds/packages/lang/rust/Makefile"
-if [ -f "$RUST_MAKEFILE" ]; then
-    sed -i 's/--ci false/--ci true/g' "$RUST_MAKEFILE"
-    
-    # 2. 核心拦截：找到原本要执行的 $(HOST_BUILD_DIR)/x.py，替换为先执行我们的外挂，再执行 x.py
-    # 用 | 做分隔符，彻底避开斜杠 / 导致的语法崩溃
-    sed -i 's|$(HOST_BUILD_DIR)/x.py|$(TOPDIR)/fix_rust.sh $(HOST_BUILD_DIR)/vendor \&\& $(HOST_BUILD_DIR)/x.py|g' "$RUST_MAKEFILE"
-fi
-
-rm -rf build_dir/host/rustc-* build_dir/target-*/host/rustc-*
-
 #=================================================
 # 脚本执行完成
 #=================================================
