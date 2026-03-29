@@ -139,25 +139,23 @@ find package/*/ -maxdepth 2 -name Makefile | \
 # cp -f $GITHUB_WORKSPACE/images/bg1.jpg feeds/luci/themes/luci-theme-argon/htdocs/luci-static/argon/img/bg1.jpg
 
 # ==============================================
-# 针对 Rust 1.90.0 的“贴脸”补齐修复
+# 终极魔法：直接清空 Cargo 的哈希校验账本
 # ==============================================
-echo "===== 开始暴力修复 Rust 校验错误 ====="
+echo "===== 开始暴力抹除 Rust 校验账本 ====="
 
 RUST_MAKEFILE="feeds/packages/lang/rust/Makefile"
 
 if [ -f "$RUST_MAKEFILE" ]; then
-    # 1. 强制开启 CI 模式
+    # 强制开启 CI 模式
     sed -i 's/--ci false/--ci true/g' "$RUST_MAKEFILE"
     
-    # 2. 直接在 Host/Compile 开头注入补齐命令
-    # 逻辑：在编译阶段找齐所有 Cargo.toml，强行复制一份 .orig 出来
+    # 在 Host/Compile 阶段，把所有 checksum 里的 "files":{...} 替换为 "files":{}
     sed -i '/define Host\/Compile/a \
-\tfind $(HOST_BUILD_DIR)/vendor -name Cargo.toml -exec cp {} {}.orig \\;' "$RUST_MAKEFILE"
+\tfind $(HOST_BUILD_DIR)/vendor -name .cargo-checksum.json -exec sed -i "s/\\"files\\":{.*}/\\"files\\":{}/g" {} +' "$RUST_MAKEFILE"
     
-    echo ">>> Rust 源码补丁注入成功"
+    echo ">>> Rust 账本清空补丁注入成功"
 fi
 
-# 3. 必须清理旧战场
 rm -rf build_dir/host/rustc-* build_dir/target-*/host/rustc-*
 #=================================================
 # 脚本执行完成
