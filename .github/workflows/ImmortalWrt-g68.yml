@@ -162,32 +162,6 @@ jobs:
         cd $OPENWRT_PATH
         mkdir -p files/etc/uci-defaults
         cp $GITHUB_WORKSPACE/scripts/init-settings.sh files/etc/uci-defaults/99-init-settings
-        # --- 终极完美修复：解决文件缺失 + 哈希不匹配 ---
-        echo "===== 正在执行 Rust 终极完美修复 ====="
-        # 1. 先强行解压源码
-        make package/feeds/packages/rust/host/prepare V=s || true
-        # 2. 定义路径
-        RUST_DIR="build_dir/target-aarch64_generic_musl/host/rustc-1.90.0-src"
-        if [ -d "$RUST_DIR/vendor" ]; then
-          echo ">>> 第一步：强制生成所有缺失的 Cargo.toml.orig"
-          find "$RUST_DIR/vendor" -name "Cargo.toml" -exec sh -c 'cp -f "$0" "$0.orig"' {} \;
-          
-          echo ">>> 第二步：【核心】直接清空/重写所有校验账本，让 Cargo 跳过哈希检查"
-          # 遍历所有 .cargo-checksum.json，直接把 files 字段清空
-          find "$RUST_DIR/vendor" -name ".cargo-checksum.json" -exec sh -c '
-            echo ">>> 处理校验文件: $0"
-            # 方法A：直接清空 files 字段（最稳妥）
-            python3 -c "import json, sys; data = json.load(open(sys.argv[1])); data[\"files\"] = {}; json.dump(data, open(sys.argv[1], \"w\"))" "$0" 2>/dev/null || \
-            # 方法B：如果Python失败，直接用sed暴力替换
-            sed -i "s/\"files\":{[^}]*}/\"files\":{}/g" "$0" 2>/dev/null || true
-          ' {} \;
-          
-          echo ">>> 修复完成！验证："
-          ls -la "$RUST_DIR/vendor/serde-1.0.215/" || true
-          echo ">>> 校验文件内容预览："
-          cat "$RUST_DIR/vendor/serde-1.0.215/.cargo-checksum.json" 2>/dev/null || true
-        fi
-        # --- 终极完美修复结束 ---
         
         echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
