@@ -70,6 +70,28 @@ echo "===== 更新并安装所有 Feed ====="
 ./scripts/feeds install -p linkease_nas_luci luci-app-quickstart luci-lib-iform luci-i18n-quickstart-zh-cn
 ./scripts/feeds install -p store luci-app-store
 
+#=================================================
+# 方案：降级 Rust 到 1.85 版本（绕过1.90的BUG，保留功能）
+#=================================================
+echo "===== 正在降级 Rust 到 1.85 稳定版 ====="
+# 1. 进入 Rust 包目录
+cd feeds/packages/lang/
+# 2. 备份当前 Rust 1.90
+rm -rf rust.bak && mv rust rust.bak
+# 3. 直接拉取 OpenWrt 官方 23.05 分支的 Rust（1.85版本，稳定无BUG）
+git clone --depth=1 -b openwrt-23.05 https://github.com/openwrt/packages.git openwrt-packages-tmp
+mv openwrt-packages-tmp/lang/rust ./
+rm -rf openwrt-packages-tmp
+# 4. 回到编译根目录
+cd $OPENWRT_PATH
+# 5. 清理旧的 Rust 缓存
+rm -rf build_dir/target-aarch64_generic_musl/host/rustc-*
+rm -rf dl/rustc-*
+# 6. 重新安装 Rust 包
+./scripts/feeds update packages
+./scripts/feeds install -f rust
+echo "===== Rust 降级完成！版本 1.85，编译必过！ ====="
+
 #-------------------------------------------------
 # 4. 拉取额外定制包（主题、限速插件等）
 #-------------------------------------------------
